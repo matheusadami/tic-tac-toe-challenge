@@ -1,33 +1,14 @@
 import { useState } from 'react'
-
-enum EndGameType {
-  hasWinner,
-  tiedGame
-}
-
-interface GameSquare {
-  position: number
-  player?: Player
-  className?: string
-}
-
-interface Symbol {
-  name: string
-  iconName: string
-  className: string
-}
-
-interface Player {
-  code: number
-  name: string
-  symbol: Symbol
-  switchToCodePlayer: number
-}
-
-interface EndGameMessage {
-  type: EndGameType
-  winner?: Player
-}
+import {
+  Symbol,
+  Player,
+  GameSquare,
+  EndGameType,
+  EndGameMessage
+} from '@/utils/types'
+import { Squares } from '@/components/Squares/index'
+import { EndGameInfo } from '@/components/EndGameInfo/index'
+import { GameInfo } from '@/components/GameInfo/index'
 
 const symbolX: Symbol = {
   name: 'X',
@@ -55,19 +36,27 @@ const playerTwo: Player = {
   switchToCodePlayer: 1
 }
 
-const winningPositions: number[][] = [
+const winningCombinations: number[][] = [
+  // Diagonals
   [1, 5, 9],
   [3, 5, 7],
+
+  // Horizontals
   [1, 2, 3],
   [4, 5, 6],
   [7, 8, 9],
+
+  // Verticals
   [1, 4, 7],
   [2, 5, 8],
   [3, 6, 9]
 ]
 
 const initialGameSquares: GameSquare[] = [
-  { position: 1, className: 'border-b-4 border-gray-400 border-opacity-70' },
+  {
+    position: 1,
+    className: 'border-b-4 border-gray-400 border-opacity-70'
+  },
   {
     position: 2,
     className: 'border-x-4 border-b-4 border-gray-400 border-opacity-70'
@@ -94,8 +83,8 @@ export function App() {
     const amountClickedSquares = squares.filter((e) => !!e.player).length
     // The game doesn't end before the fifth play
     if (amountClickedSquares >= 5) {
-      for (const positions of winningPositions) {
-        let codes = getCodePlayersByPositions(positions)
+      for (const combination of winningCombinations) {
+        let codes = getCodePlayersByPositions(combination)
         let isHasWinner = codes.every((e) => !!e && e === codes.at(0))
         if (isHasWinner) {
           let endGameMessage = {
@@ -157,91 +146,25 @@ export function App() {
         Tic-Tac-Toe Challenge
       </div>
       <div className="flex mx-auto justify-evenly items-center w-full">
-        <div
-          className={`grid grid-cols-3 grid-rows-3 ${
-            !!endGameMessage ? 'pointer-events-none' : ''
-          }`}>
-          {squares.map((square, index) => (
-            <div
-              key={square.position}
-              onClick={(e) => onPlay({ ...square }, index)}
-              className={`flex justify-center items-center w-36 h-36 p-2 rounded-2xl cursor-pointer ${square.className}`}>
-              <span
-                hidden={!square.player}
-                className={`material-icons-outlined ${square.player?.symbol.className}`}>
-                {square.player?.symbol.iconName}
-              </span>
-            </div>
-          ))}
-        </div>
+        <Squares
+          onPlay={onPlay}
+          squares={squares}
+          disabled={!!endGameMessage}
+        />
         <div className="h-full">
-          <div className="flex flex-col justify-evenly items-center h-full">
-            {!!endGameMessage && (
-              <>
-                <div className="flex flex-col justify-center items-center p-4 gap-4 rounded-xl bg-gray-700 border-opacity-70">
-                  {endGameMessage.type === EndGameType.hasWinner && (
-                    <div className="flex flex-col items-center text-2xl text-gray-200 font-medium px-8">
-                      <span
-                        className={`material-icons-outlined ${endGameMessage.winner?.symbol.className} !text-7xl m-2`}>
-                        {endGameMessage.winner?.symbol.iconName}
-                      </span>
-                      <span>Winner!</span>
-                    </div>
-                  )}
-                  {endGameMessage.type === EndGameType.tiedGame && (
-                    <div className="flex flex-col items-center text-2xl text-gray-200 font-medium px-8">
-                      <span className="material-icons-outlined text-yellow-400 !text-7xl m-2">
-                        sentiment_neutral
-                      </span>
-                      <span>No Winner!</span>
-                    </div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={onPlayAgain}
-                  className="flex w-full justify-center rounded-md border py-3 px-4 mt-2 text-lg font-medium text-gray-900 bg-green-500 border-gray-900 hover:shadow-lg focus:outline-none focus:ring-0 focus:ring-gray-500 focus:ring-offset-1">
-                  Play Again
-                </button>
-              </>
-            )}
-            {!endGameMessage && (
-              <>
-                <div className="flex flex-col justify-center items-start p-4 gap-4 rounded-xl bg-gray-700 border-opacity-70">
-                  {[symbolX, symbolO].map((symbol) => (
-                    <div
-                      key={symbol.name}
-                      className="flex flex-row justify-center">
-                      <span
-                        className={`material-icons-outlined ${symbol.className} !text-4xl`}>
-                        {symbol.iconName}
-                      </span>
-                      <div className="text-2xl text-gray-200 font-medium">
-                        <span className="ml-2"> =</span>
-                        <span className="ml-3">
-                          {
-                            squares.filter(
-                              (e) => e.player?.symbol.name === symbol.name
-                            ).length
-                          }
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex flex-row justify-center items-start p-4 rounded-xl bg-gray-700 border-opacity-70">
-                  <div className="text-2xl text-gray-200 font-medium mr-3">
-                    Player:
-                  </div>
-                  <span
-                    hidden={!currentPlayer}
-                    className={`material-icons-outlined ${currentPlayer.symbol.className} !text-3xl`}>
-                    {currentPlayer.symbol.iconName}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
+          {endGameMessage && (
+            <EndGameInfo
+              endGameMessage={endGameMessage}
+              onPlayAgain={onPlayAgain}
+            />
+          )}
+          {!endGameMessage && (
+            <GameInfo
+              symbols={[symbolX, symbolO]}
+              squares={squares}
+              currentPlayer={currentPlayer}
+            />
+          )}
         </div>
       </div>
     </div>
